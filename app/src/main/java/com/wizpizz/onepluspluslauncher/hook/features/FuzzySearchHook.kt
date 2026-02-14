@@ -136,10 +136,9 @@ object FuzzySearchHook {
 
                 val score = calculateMatchScore(appNameLower, queryLower)
 
-                if (score >= MATCH_THRESHOLD) {
-                    appInfo?.let { FuzzyMatchResult(it, score, appName, appNameLower) }
-                        ?.let { scoredResults.add(it) }
-                }
+                // Keep all apps; score determines ordering
+                appInfo?.let { FuzzyMatchResult(it, score, appName, appNameLower) }
+                    ?.let { scoredResults.add(it) }
             } catch (e: Throwable) {
                 Log.e(TAG, "[FuzzySearch] Error processing app: ${e.message}")
             }
