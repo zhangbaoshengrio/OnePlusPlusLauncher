@@ -13,7 +13,9 @@
 ![GitHub Repo stars](https://img.shields.io/github/stars/wizpizz/OnePlusPlusLauncher?style=for-the-badge)
 
 
-OnePlusPlusLauncher is an Xposed/LSPosed module for the System Launcher on OxygenOS 15 that hooks into the application using the [YukiHookAPI](https://github.com/HighCapable/YuKiHookAPI) framework. It modifies app drawer search functions: automating keyboard display, enabling instant app launch from search, redirecting search actions to the app drawer, and providing optional fuzzy search.
+OnePlusPlusLauncher is an Xposed/LSPosed module for the System Launcher on OxygenOS 16 that hooks into the application using the [YukiHookAPI](https://github.com/HighCapable/YuKiHookAPI) framework. It modifies app drawer search functions: automating keyboard display, enabling instant app launch from search, redirecting search actions to the app drawer, and providing optional fuzzy search.
+
+**Tested on System Launcher 16.4.15 (build 160040015).**
 
 **Please star the repository, if you enjoy using the module! It goes a long way ⭐**
 
