@@ -136,11 +136,37 @@ object HookUtils {
                 Log.w(TAG, "[AutoFocus] Could not focus search input - no suitable method found")
             }
 
-            // Show keyboard
+            // Show keyboard (immediate)
             searchUiManager.current().method {
                 name = "showKeyboard"
                 superClass()
             }.call()
+
+            // Retry keyboard show after a short delay (some builds need a second tick)
+            try {
+                if (searchUiManager is android.view.View) {
+                    searchUiManager.postDelayed({
+                        try {
+                            // Re-focus if possible
+                            val editText = try {
+                                searchUiManager.current().method {
+                                    name = "getEditText"
+                                    superClass()
+                                }.call() as? android.widget.EditText
+                            } catch (_: Throwable) { null }
+                            editText?.requestFocus()
+
+                            searchUiManager.current().method {
+                                name = "showKeyboard"
+                                superClass()
+                            }.call()
+                            Log.d(TAG, "[AutoFocus] Retried showKeyboard")
+                        } catch (e: Throwable) {
+                            Log.d(TAG, "[AutoFocus] Retry showKeyboard failed: ${e.message}")
+                        }
+                    }, 200)
+                }
+            } catch (_: Throwable) {}
             
         } catch (e: Throwable) {
             Log.e(TAG, "[AutoFocus] Error during focus logic: ${e.message}")
