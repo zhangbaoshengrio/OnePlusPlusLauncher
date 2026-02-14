@@ -25,7 +25,7 @@ object FuzzySearchHook {
     private const val SUBSTRING_MATCH_MULTIPLIER = 1.3
     private const val SUBSEQUENCE_MATCH_MULTIPLIER = 1.1
 
-    data class FuzzyMatchResult(val appInfo: Any, val score: Int, val appName: String)
+    data class FuzzyMatchResult(val appInfo: Any, val score: Int, val appName: String, val appNameLower: String)
 
     fun apply(packageParam: PackageParam) {
         packageParam.apply {
@@ -78,8 +78,8 @@ object FuzzySearchHook {
         // Score and filter results
         val scoredResults = scoreSearchResults(allAppInfos, query)
 
-        // Sort by score and convert to adapter items
-        return convertToAdapterItems(scoredResults)
+        // Sort by relevance and convert to adapter items
+        return convertToAdapterItems(scoredResults, query)
     }
 
     private fun getAppsListFromContainer(containerInstance: Any): Any? {
@@ -137,7 +137,7 @@ object FuzzySearchHook {
                 val score = calculateMatchScore(appNameLower, queryLower)
 
                 if (score >= MATCH_THRESHOLD) {
-                    appInfo?.let { FuzzyMatchResult(it, score, appName) }
+                    appInfo?.let { FuzzyMatchResult(it, score, appName, appNameLower) }
                         ?.let { scoredResults.add(it) }
                 }
             } catch (e: Throwable) {
@@ -181,8 +181,21 @@ object FuzzySearchHook {
         return patternIndex == pattern.length
     }
 
-    private fun PackageParam.convertToAdapterItems(scoredResults: List<FuzzyMatchResult>): ArrayList<Any> {
-        val sortedResults = scoredResults.sortedByDescending { it.score }
+    private fun PackageParam.convertToAdapterItems(
+        scoredResults: List<FuzzyMatchResult>,
+        query: String
+    ): ArrayList<Any> {
+        val queryLower = query.lowercase()
+        val sortedResults = scoredResults.sortedWith(
+            compareByDescending<FuzzyMatchResult> {
+                when {
+                    it.appNameLower == queryLower -> 3
+                    it.appNameLower.startsWith(queryLower) -> 2
+                    it.appNameLower.contains(queryLower) -> 1
+                    else -> 0
+                }
+            }.thenByDescending { it.score }
+        )
 
         val finalAdapterItems = ArrayList<Any>()
         val adapterItemClass = BASE_ADAPTER_ITEM_CLASS.toClass(appClassLoader)
@@ -206,4 +219,4 @@ object FuzzySearchHook {
 
         return finalAdapterItems
     }
-} 
+}
