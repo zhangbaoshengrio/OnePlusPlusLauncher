@@ -52,8 +52,9 @@ object SwipeDownSearchRedirectHook {
                                 HookUtils.setRedirectInProgress(false)
                             }
                             
-                            // Return true to indicate success and prevent original method execution
-                            result = true
+                            // Return false to indicate we didn't show the stock search bar
+                            // (prevents overlay from staying on top)
+                            result = false
                         } else {
                             Log.d(TAG, "[SwipeDownSearch] Failed to open app drawer, allowing original behavior")
                             // Clear redirect flag since we failed
@@ -135,6 +136,11 @@ object SwipeDownSearchRedirectHook {
             } catch (e: Throwable) {
                 Log.w(TAG, "[SwipeDownSearch] Could not clean up BlurScrimWindowController: ${e.message}")
             }
+
+            // Try to reset controller state (newer versions may keep overlay state)
+            try { controllerInstance.current().method { name = "resetPullDownState"; superClass() }.call() } catch (_: Throwable) {}
+            try { controllerInstance.current().method { name = "resetState"; superClass() }.call() } catch (_: Throwable) {}
+            try { controllerInstance.current().method { name = "reset"; superClass() }.call() } catch (_: Throwable) {}
             
         } catch (e: Throwable) {
             Log.e(TAG, "[SwipeDownSearch] Error during animation cleanup: ${e.message}")
