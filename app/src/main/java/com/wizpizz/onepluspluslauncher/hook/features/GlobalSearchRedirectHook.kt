@@ -17,47 +17,54 @@ import com.wizpizz.onepluspluslauncher.hook.features.HookUtils.TAG
  * Also provides optional auto-focus when redirecting.
  * 
  * Updated for System Launcher 15.8.17+ which uses IndicatorEntry instead of SearchEntry.
+ * Still supports legacy SearchEntry for older versions.
  */
 object GlobalSearchRedirectHook {
     
     private const val INDICATOR_ENTRY_CLASS = "com.android.launcher3.search.IndicatorEntry"
+    private const val SEARCH_ENTRY_CLASS = "com.android.launcher3.search.SearchEntry"
     private const val QUICK_SEARCH_BOX_PACKAGE = "com.oppo.quicksearchbox"
     
     fun apply(packageParam: PackageParam) {
         packageParam.apply {
-            INDICATOR_ENTRY_CLASS.toClassOrNull(appClassLoader)?.method {
-                name = "startIndicatorApp"
-                param(IntentClass)
-                returnType = BooleanType
-            }?.hook { 
-                before { 
-                    // Check if global search redirect is enabled
-                    val globalSearchRedirectEnabled = prefs.getBoolean(PREF_GLOBAL_SEARCH_REDIRECT, true)
-                    if (!globalSearchRedirectEnabled) return@before
-                    
-                    val intentToLaunch = args[0] as? android.content.Intent
-                    val targetPackageName = intentToLaunch?.`package`
-                    
-                    // Check if this is a QuickSearchBox intent (or null default)
-                    val isQuickSearchBoxIntent = (targetPackageName == QUICK_SEARCH_BOX_PACKAGE) || (intentToLaunch == null)
+            hookIndicatorEntry(INDICATOR_ENTRY_CLASS, "startIndicatorApp")
+            hookIndicatorEntry(SEARCH_ENTRY_CLASS, "startSearchApp")
+        }
+    }
 
-                    if (isQuickSearchBoxIntent) {
-                        Log.d(TAG, "[GlobalSearch] Intercepting QuickSearchBox launch, redirecting to All Apps")
-                        
-                        // Mark that we're starting a redirect to prevent AutoFocusHook from triggering
-                        HookUtils.setRedirectInProgress(true)
-                        
-                        if (redirectToAllApps(instance)) {
-                            result = false // Prevent original method
-                            return@before
-                        } else {
-                            // Reset flag if redirect failed
-                            HookUtils.setRedirectInProgress(false)
-                        }
+    private fun PackageParam.hookIndicatorEntry(className: String, methodName: String) {
+        className.toClassOrNull(appClassLoader)?.method {
+            name = methodName
+            param(IntentClass)
+            returnType = BooleanType
+        }?.hook {
+            before {
+                // Check if global search redirect is enabled
+                val globalSearchRedirectEnabled = prefs.getBoolean(PREF_GLOBAL_SEARCH_REDIRECT, true)
+                if (!globalSearchRedirectEnabled) return@before
+
+                val intentToLaunch = args[0] as? android.content.Intent
+                val targetPackageName = intentToLaunch?.`package`
+
+                // Check if this is a QuickSearchBox intent (or null default)
+                val isQuickSearchBoxIntent = (targetPackageName == QUICK_SEARCH_BOX_PACKAGE) || (intentToLaunch == null)
+
+                if (isQuickSearchBoxIntent) {
+                    Log.d(TAG, "[GlobalSearch] Intercepting QuickSearchBox launch, redirecting to All Apps")
+
+                    // Mark that we're starting a redirect to prevent AutoFocusHook from triggering
+                    HookUtils.setRedirectInProgress(true)
+
+                    if (redirectToAllApps(instance)) {
+                        result = false // Prevent original method
+                        return@before
+                    } else {
+                        // Reset flag if redirect failed
+                        HookUtils.setRedirectInProgress(false)
                     }
                 }
-            } ?: Log.e(TAG, "[GlobalSearch] Failed to find IndicatorEntry.startIndicatorApp method")
-        }
+            }
+        } ?: Log.d(TAG, "[GlobalSearch] $className.$methodName not found")
     }
     
     private fun PackageParam.redirectToAllApps(indicatorEntryInstance: Any): Boolean {
