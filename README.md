@@ -17,6 +17,11 @@ OnePlusPlusLauncher is an Xposed/LSPosed module for the System Launcher on Oxyge
 
 **Tested on System Launcher 16.4.15 (build 160040015).**
 
+## 🙏 Attribution & Adaptation
+
+- Original project: **[wizpizz/OnePlusPlusLauncher](https://github.com/wizpizz/OnePlusPlusLauncher)**
+- This fork was adapted for **OxygenOS 16 (System Launcher 16.4.15)** by **Zhangzong** with assistance from **OpenClaw**.
+
 **Please star the repository, if you enjoy using the module! It goes a long way ⭐**
 
 ## 📦 Installation
